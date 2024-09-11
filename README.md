@@ -6,7 +6,8 @@ Requires docker to be installed, then you can use the docker-compose.yml file in
 If you find any bugs with any of the files in this repository please report them as issues and if you want to submit fixes please fork the repo and submit a PR. I'll merge any submitted PRs periodically.
 
 Docker Compose Documentation:<br>
-https://docs.docker.com/reference/cli/docker/compose/
+https://docs.docker.com/reference/cli/docker/compose/ <br>
+https://docs.docker.com/reference/compose-file/
 
 ## LocalStack
 * https://www.localstack.cloud/
