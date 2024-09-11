@@ -1,0 +1,191 @@
+services:
+  activemq:
+    image: apache/activemq-classic:latest
+    container_name: activemq
+    networks:
+      - internal-network
+    ports:
+      - "61616:61616"   # OpenWire protocol
+      - "61613:61613"   # STOMP protocol
+      - "5672:5672"     # AMQP protocol
+      - "1883:1883"     # MQTT protocol
+      - "8161:8161"     # Web console
+    environment:
+      - ACTIVEMQ_USER=admin
+      - ACTIVEMQ_PASSWORD=admin
+    volumes:
+      - activemq_data:/tmp/dockerized/activemq/data
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    networks:
+      - internal-network
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    networks:
+      - internal-network
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      - KAFKA_ADVERTISED_LISTENERS=INSIDE://kafka:9093,OUTSIDE://localhost:9092
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      - KAFKA_LISTENERS=INSIDE://0.0.0.0:9093,OUTSIDE://0.0.0.0:9092
+      - KAFKA_LISTENER_NAME=INSIDE
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+
+  hashicorp_vault:
+    image: hashicorp/vault:latest
+    container_name: hashicorp_vault
+    networks:
+      - internal-network
+    ports:
+      - "8200:8200"
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=root
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK  # This prevents the Vault process from being swapped out of memory
+
+  cassandra:
+    image: cassandra:latest
+    container_name: cassandra
+    networks:
+      - internal-network
+    ports:
+      - "9042:9042"  # Cassandra CQL protocol
+      - "7000:7000"  # Cassandra inter-node communication (native)
+      - "7001:7001"  # Cassandra inter-node communication (SSL)
+      - "7199:7199"  # JMX monitoring
+    environment:
+      - CASSANDRA_CLUSTER_NAME=MyCassandraCluster
+      - CASSANDRA_DC=DC1
+      - CASSANDRA_RACK=RACK1
+      - CASSANDRA_USER=admin
+      - CASSANDRA_PASSWORD=admin
+
+    volumes:
+      - cassandra_data:/tmp/dockerized/cassandra/data
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    networks:
+      - internal-network
+    ports:
+      - "27017:27017"  # Default MongoDB port
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=admin
+      - MONGODB_USERNAME=admin
+      - MONGODB_PASSWORD=admin
+    volumes:
+      - mongodb_data:/tmp/dockerized/mongodb/data/db
+
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    networks:
+      - internal-network
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=example
+    volumes:
+      - postgres_data:/tmp/dockerized/postgresql/data
+
+  mysql:
+    image: mysql:latest
+    container_name: mysql
+    networks:
+      - internal-network
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=example
+      - MYSQL_USER=admin
+      - MYSQL_PASSWORD=admin
+    volumes:
+      - mysql_data:/tmp/dockerized/mysql/data
+
+  mariadb:
+    image: mariadb:latest
+    container_name: mariadb
+    networks:
+      - internal-network
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=example
+      - MYSQL_USER=admin
+      - MYSQL_PASSWORD=admin
+    volumes:
+      - mariadb_data:/tmp/dockerized/mariadb/data
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:latest
+    container_name: sqlserver
+    networks:
+      - internal-network
+    ports:
+      - "1433:1433"
+    environment:
+      - SA_PASSWORD=admin123!
+      - ACCEPT_EULA=Y
+    volumes:
+      - sqlserver_data:/tmp/dockerized/mssql
+
+  oracle:
+    image: oracleinanutshell/oracle-xe-11g:latest
+    container_name: oracle
+    networks:
+      - internal-network
+    ports:
+      - "1521:1521"
+    environment:
+      - ORACLE_ALLOW_REMOTE=true
+      - ORACLE_PASSWORD=admin123!
+    volumes:
+      - oracle_data:/tmp/dockerized/oracle/oradata
+
+  localstack:
+    image: localstack/localstack:latest
+    container_name: localstack
+    networks:
+      - internal-network
+    ports:
+      - "4566:4566"  # Gateway for all LocalStack services
+      - "4510:4510"  # LocalStack dashboard (optional)
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - DEBUG=0
+    volumes:
+      - localstack_data:/tmp/dockerized/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  activemq_data:
+  cassandra_data:
+  mongodb_data:
+  postgres_data:
+  mysql_data:
+  sqlserver_data:
+  localstack_data:
+  oracle_data:
+  mariadb_data:
+
+networks:
+  internal-network:
+    driver: bridge
